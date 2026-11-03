@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Kite-Checker</title>
+<meta name="description" content="Ist heute Kitewetter? Wind, Böen, Windrichtung und Gezeiten für deinen Spot.">
+<meta name="theme-color" content="#0e2a3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kite-Checker">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout: eine Spalte wie ein Gezeitenkalender – Urteil oben, Stunden darunter, Woche am Ende */
+:root {
+  --bg: #eaf1f2; --surface: #ffffff; --fg: #0f2733; --muted: #587080; --line: #d2dde1;
+  --accent: #f26b1d; --sea: #2a8599; --sea-soft: #cfe6ea;
+  --good: #198a5d; --good-bg: #dcf2e7; --ok: #b77a06; --ok-bg: #fbedcc; --bad: #c43c33; --bad-bg: #f8dedb; --night: #9aabb3;
+  --f-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Atkinson Hyperlegible", -apple-system, "Segoe UI", sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a1a23; --surface: #112634; --fg: #e4eef1; --muted: #8aa2ad; --line: #203a4a;
+  --accent: #ff8a45; --sea: #5bbdcd; --sea-soft: #173b4a;
+  --good: #3cc58b; --good-bg: #133a2c; --ok: #f0b43c; --ok-bg: #3d3014; --bad: #f06a5f; --bad-bg: #42201e; --night: #4c6370;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0a1a23; --surface: #112634; --fg: #e4eef1; --muted: #8aa2ad; --line: #203a4a;
+  --accent: #ff8a45; --sea: #5bbdcd; --sea-soft: #173b4a;
+  --good: #3cc58b; --good-bg: #133a2c; --ok: #f0b43c; --ok-bg: #3d3014; --bad: #f06a5f; --bad-bg: #42201e; --night: #4c6370;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+body {
+  font: 16px/1.45 var(--f-body);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-user-select: none; user-select: none;
+}
+input, select, button { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+/* Kopf */
+.top { display: flex; align-items: center; gap: 10px; padding-top: 14px; }
+.spot-btn { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0; }
+.spot-btn .eyebrow { font: 500 12px var(--f-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.spot-btn .name { font: 700 24px/1.15 var(--f-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spot-btn .name::after { content: " ▾"; font-size: 15px; color: var(--muted); }
+.icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; flex: none; }
+.icon-btn svg { width: 20px; height: 20px; stroke: var(--fg); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spin svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Urteil */
+.verdict { border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.verdict.good { background: var(--good-bg); border-color: transparent; }
+.verdict.ok { background: var(--ok-bg); border-color: transparent; }
+.verdict.bad { background: var(--bad-bg); border-color: transparent; }
+.verdict .day { font: 500 12px var(--f-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.verdict h1 { margin: 0; font: 700 34px/1.05 var(--f-display); text-wrap: balance; }
+.verdict.good h1 { color: var(--good); } .verdict.ok h1 { color: var(--ok); } .verdict.bad h1 { color: var(--bad); }
+.verdict .win { font: 700 20px var(--f-display); }
+.verdict .why { color: var(--muted); font-size: 15px; }
+
+/* Jetzt-Werte */
+.now { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat .k { font: 500 11px var(--f-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font: 700 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; }
+.stat .v small { font: 500 13px var(--f-data); color: var(--muted); }
+.stat .s { font-size: 13px; line-height: 1.25; color: var(--muted); }
+.arrow { width: 24px; height: 24px; flex: none; }
+#nDir { font-size: 22px; gap: 4px; }
+.arrow path { fill: var(--accent); }
+
+/* Abschnitte */
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+.sec-h h2 { margin: 0; font: 700 18px var(--f-display); }
+.sec-h span { font: 500 12px var(--f-data); color: var(--muted); }
+
+/* Stundenleiste */
+.hours { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.hours::-webkit-scrollbar { display: none; }
+.hr { flex: 0 0 54px; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 0 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden; }
+.hr .bar { align-self: stretch; height: 6px; background: var(--night); }
+.hr.good .bar { background: var(--good); } .hr.ok .bar { background: var(--ok); } .hr.bad .bar { background: var(--bad); }
+.hr.night { opacity: .5; }
+.hr.now { border-color: var(--accent); border-width: 2px; }
+.hr .t { font: 500 12px var(--f-data); color: var(--muted); margin-top: 4px; }
+.hr .w { font: 700 19px var(--f-display); font-variant-numeric: tabular-nums; }
+.hr .g { font: 500 11px var(--f-data); color: var(--muted); }
+.hr .arrow { width: 20px; height: 20px; }
+.hr .hw { font: 500 10px var(--f-data); color: var(--sea); height: 13px; }
+
+/* Gezeitenkurve */
+.tide { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 12px 12px 6px; }
+.tide svg { display: block; width: 100%; height: auto; }
+.tide .lbl { font: 500 10px var(--f-data); fill: var(--muted); }
+.tide .hwl { font: 500 11px var(--f-data); fill: var(--sea); }
+.tide-note { font-size: 13px; color: var(--muted); margin: 6px 2px 4px; }
+
+/* Woche */
+.week { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.dayrow { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; width: 100%; }
+.dayrow:first-child { border-top: 0; }
+.dayrow.sel { background: var(--sea-soft); }
+.dayrow .dn { font: 700 16px var(--f-display); }
+.dayrow .dn small { display: block; font: 500 11px var(--f-data); color: var(--muted); }
+.dayrow .info { min-width: 0; }
+.dayrow .info b { display: block; font-size: 15px; }
+.dayrow .info span { font-size: 13px; color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip { font: 700 12px var(--f-body); padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.chip.good { background: var(--good-bg); color: var(--good); } .chip.ok { background: var(--ok-bg); color: var(--ok); } .chip.bad { background: var(--bad-bg); color: var(--bad); }
+
+/* Legende & Hinweis */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+.note a { color: var(--sea); }
+.err { background: var(--bad-bg); color: var(--bad); border-radius: 14px; padding: 12px 14px; font-size: 15px; }
+
+/* Einstellungen */
+.sheet-back { position: fixed; inset: 0; background: rgba(5, 15, 20, .45); z-index: 20; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 92vh; overflow-y: auto; background: var(--bg); border-radius: 22px 22px 0 0;
+  padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.sheet-in { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.sheet h2 { margin: 0; font: 700 22px var(--f-display); }
+.sheet h3 { margin: 4px 0 0; font: 700 15px var(--f-display); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.spots { display: flex; flex-direction: column; gap: 8px; }
+.spot-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.spot-item.active { border-color: var(--accent); border-width: 2px; }
+.spot-item button.pick { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0; }
+.spot-item .n { font-weight: 700; display: block; }
+.spot-item .m { font-size: 13px; color: var(--muted); }
+.spot-item .del { background: none; border: 0; color: var(--muted); font-size: 22px; line-height: 1; padding: 4px 6px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; font-weight: 700; }
+.field .hint { font-size: 13px; color: var(--muted); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+input[type=text], input[type=number], select {
+  width: 100%; min-width: 0; font-size: 16px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+  -webkit-user-select: text; user-select: text; -webkit-appearance: none; appearance: none;
+}
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; border-radius: 9px; padding: 9px 4px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.seg button.on { background: var(--fg); color: var(--bg); }
+.results { display: flex; flex-direction: column; gap: 6px; }
+.results button { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.results small { color: var(--muted); }
+.btn { border: 0; border-radius: 14px; padding: 13px 16px; font-weight: 700; background: var(--fg); color: var(--bg); }
+.btn.ghost { background: var(--surface); color: var(--fg); border: 1px solid var(--line); }
+.btns { display: flex; gap: 10px; }
+.btns .btn { flex: 1; }
+.compass-pick { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+.compass-pick button { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 8px 0; font: 500 12px var(--f-data); }
+.compass-pick button.on { background: var(--sea); color: #fff; border-color: var(--sea); }
+@media (prefers-reduced-motion: reduce) { .spin svg { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <button class="spot-btn" id="spotBtn" aria-label="Spot wechseln">
+      <div class="eyebrow" id="updated">Lädt …</div>
+      <div class="name" id="spotName">Norddeich</div>
+    </button>
+    <button class="icon-btn" id="refreshBtn" aria-label="Aktualisieren">
+      <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <div id="error" class="err" hidden></div>
+
+  <section class="verdict" id="verdict">
+    <div class="day" id="vDay">Heute</div>
+    <h1 id="vTitle">Lädt Vorhersage …</h1>
+    <div class="win" id="vWin"></div>
+    <div class="why" id="vWhy"></div>
+  </section>
+
+  <section class="now" id="now" aria-label="Werte jetzt">
+    <div class="stat"><span class="k">Wind</span><span class="v" id="nWind">–</span><span class="s" id="nBft">&nbsp;</span></div>
+    <div class="stat"><span class="k">Böen</span><span class="v" id="nGust">–</span><span class="s" id="nSpread">&nbsp;</span></div>
+    <div class="stat"><span class="k">Richtung</span><span class="v" id="nDir">–</span><span class="s" id="nRel">&nbsp;</span></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2 id="hoursTitle">Stunden</h2><span>Knoten · Böen</span></div>
+    <div class="hours" id="hours"></div>
+    <div class="legend" style="margin-top:8px">
+      <span><i style="background:var(--good)"></i>Kitebar</span>
+      <span><i style="background:var(--ok)"></i>Grenzwertig</span>
+      <span><i style="background:var(--bad)"></i>Nicht kitebar</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Gezeiten</h2><span id="tideSub">HW = Hochwasser</span></div>
+    <div class="tide" id="tide"></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Diese Woche</h2><span>Tippen für Details</span></div>
+    <div class="week" id="week"></div>
+  </section>
+
+  <p class="note">
+    Vorhersage ohne Gewähr. Als Anfänger immer kurz bei der Kiteschule nachfragen, bevor ihr rausgeht – besonders bei ablandigem Wind, Gewitter oder ablaufendem Wasser.
+    Daten: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Wind & Wasserstand, Modellwerte).
+  </p>
+</div>
+
+<!-- Einstellungen -->
+<div class="sheet-back" id="sheetBack" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-in">
+    <div class="sec-h" style="margin:0"><h2 id="sheetTitle">Spots & Einstellungen</h2><button class="icon-btn" id="closeSheet" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+
+    <h3>Deine Spots</h3>
+    <div class="spots" id="spotList"></div>
+
+    <h3>Neuer Spot</h3>
+    <div class="field">
+      <label for="search">Ort suchen</label>
+      <input type="text" id="search" placeholder="z. B. St. Peter-Ording, Fehmarn, Hooksiel" autocomplete="off">
+      <div class="results" id="results"></div>
+    </div>
+
+    <h3 id="editTitle">Spot bearbeiten</h3>
+    <div class="field">
+      <label for="fName">Name</label>
+      <input type="text" id="fName">
+    </div>
+    <div class="row2">
+      <div class="field"><label for="fLat">Breite</label><input type="number" id="fLat" step="0.0001" inputmode="decimal"></div>
+      <div class="field"><label for="fLon">Länge</label><input type="number" id="fLon" step="0.0001" inputmode="decimal"></div>
+    </div>
+    <div class="field">
+      <label>Wo liegt das Meer vom Strand aus?</label>
+      <div class="compass-pick" id="seaPick"></div>
+      <span class="hint">Kommt der Wind aus dieser Richtung, drückt er aufs Land (auflandig). Gegenrichtung = ablandig = gefährlich.</span>
+    </div>
+
+    <h3>Wind</h3>
+    <div class="row3">
+      <div class="field"><label for="fMin">Min (kn)</label><input type="number" id="fMin" inputmode="numeric"></div>
+      <div class="field"><label for="fMax">Max (kn)</label><input type="number" id="fMax" inputmode="numeric"></div>
+      <div class="field"><label for="fGust">Böen max</label><input type="number" id="fGust" inputmode="numeric"></div>
+    </div>
+    <span class="hint" style="font-size:13px;color:var(--muted);margin-top:-8px">Anfänger mit Leihmaterial: ca. 12–22 kn, Böen bis 25 kn. Die Kiteschule wählt die Schirmgröße passend.</span>
+
+    <h3>Gezeiten</h3>
+    <div class="seg" id="tideSeg">
+      <button data-v="pflicht">Nur bei Flut</button>
+      <button data-v="bevorzugt">Flut lieber</button>
+      <button data-v="egal">Egal</button>
+    </div>
+    <div class="field">
+      <label for="fTideWin">Flut-Fenster: ± Stunden um Hochwasser</label>
+      <input type="number" id="fTideWin" min="1" max="6" inputmode="numeric">
+    </div>
+
+    <div class="btns">
+      <button class="btn ghost" id="resetSpot">Zurücksetzen</button>
+      <button class="btn" id="saveSpot">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script src="logic.js"></script>
+<script>
+(function () {
+  "use strict";
+  const L = window.KiteLogic;
+  const $ = id => document.getElementById(id);
+  const DIRS = [["N",0],["NO",45],["O",90],["SO",135],["S",180],["SW",225],["W",270],["NW",315],["NNO",22.5],["ONO",67.5],["OSO",112.5],["SSO",157.5],["SSW",202.5],["WSW",247.5],["WNW",292.5],["NNW",337.5]];
+
+  const DEFAULT_SPOT = {
+    id: "norddeich",
+    name: "Norddeich",
+    lat: 53.6365, lon: 7.1405,
+    seaDir: 337.5,           // Meer liegt nordnordwestlich
+    minWind: 12, maxWind: 22, maxGust: 25,
+    tideMode: "bevorzugt", tideWindow: 2,
+  };
+
+  // ---------- Speicher ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+  let spots = store.get("kc.spots", null) || [DEFAULT_SPOT];
+  let activeId = store.get("kc.active", spots[0].id);
+  if (!spots.find(s => s.id === activeId)) activeId = spots[0].id;
+  const active = () => spots.find(s => s.id === activeId);
+
+  let state = { hours: [], tides: [], days: [], selDay: null, fetchedAt: null };
+
+  // ---------- Formatierung ----------
+  const fmtTime = ms => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
+  const fmtHour = ms => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digit", hourCycle: "h23", timeZone: "Europe/Berlin" }).replace(/\D/g, "");
+  const dayName = (iso, long) => {
+    const d = new Date(iso + "T12:00:00");
+    const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+    const tomorrow = new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+    if (iso === today) return "Heute";
+    if (iso === tomorrow) return "Morgen";
+    return d.toLocaleDateString("de-DE", { weekday: long ? "long" : "short" });
+  };
+  const dateShort = iso => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+  const r = n => Math.round(n);
+  const arrowSvg = dir => `<svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${(dir + 180) % 360}deg)" aria-hidden="true"><path d="M12 2l6 15-6-3.5L6 17z"/></svg>`;
+
+  // ---------- Daten holen ----------
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  async function fetchMarine(s) {
+    // Direkt an der Küste liefert das Modell oft keinen Wasserstand – dann etwas weiter seewärts probieren
+    const rad = s.seaDir * Math.PI / 180;
+    const offsets = [0, 0.04, 0.08, 0.15];
+    for (const k of offsets) {
+      const lat = (s.lat + Math.cos(rad) * k).toFixed(4);
+      const lon = (s.lon + Math.sin(rad) * k * 1.6).toFixed(4);
+      try {
+        const m = await fetchJson(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=sea_level_height_msl&timezone=Europe%2FBerlin&forecast_days=7`);
+        const vals = (m.hourly && m.hourly.sea_level_height_msl) || [];
+        if (vals.filter(v => v != null).length > 24) return m;
+      } catch (e) { /* nächster Punkt */ }
+    }
+    return null;
+  }
+
+  async function load() {
+    const s = active();
+    $("spotName").textContent = s.name;
+    $("refreshBtn").classList.add("spin");
+    $("error").hidden = true;
+    try {
+      const wUrl = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lon}` +
+        `&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,precipitation,weather_code,is_day` +
+        `&daily=sunrise,sunset&wind_speed_unit=kn&timezone=Europe%2FBerlin&forecast_days=7`;
+      const [weather, marine] = await Promise.all([fetchJson(wUrl), fetchMarine(s)]);
+      store.set("kc.cache." + s.id, { weather, marine, at: Date.now() });
+      process(weather, marine, Date.now());
+    } catch (e) {
+      const c = store.get("kc.cache." + s.id, null);
+      if (c) {
+        process(c.weather, c.marine, c.at);
+        showError("Keine Verbindung – du siehst die Daten von " + new Date(c.at).toLocaleString("de-DE", { weekday: "short", hour: "2-digit", minute: "2-digit" }) + ".");
+      } else {
+        showError("Vorhersage konnte nicht geladen werden. Prüf deine Internetverbindung und tippe auf Aktualisieren.");
+        $("vTitle").textContent = "Keine Daten";
+      }
+    } finally {
+      $("refreshBtn").classList.remove("spin");
+    }
+  }
+
+  function showError(t) { const e = $("error"); e.textContent = t; e.hidden = false; }
+
+  function process(weather, marine, at) {
+    const s = active();
+    const hours = L.buildHours(weather, marine);
+    const seaTimes = hours.filter(h => h.sea != null);
+    const tides = L.findTides(seaTimes.map(h => h.time), seaTimes.map(h => h.sea));
+    hours.forEach(h => { h.rating = L.rateHour(h, s, tides); });
+    const byDay = new Map();
+    hours.forEach(h => { if (!byDay.has(h.day)) byDay.set(h.day, []); byDay.get(h.day).push(h); });
+    const days = [...byDay.entries()].map(([day, hs]) => {
+      const dayHours = hs.filter(h => h.isDay);
+      const best = L.bestWindow(dayHours);
+      return {
+        day, hours: hs, best,
+        status: best ? best.quality : "bad",
+        maxWind: Math.max(...dayHours.map(h => h.wind), 0),
+        tides: tides.filter(t => t.time >= hs[0].time && t.time < hs[hs.length - 1].time + 3600e3),
+      };
+    });
+    state = { hours, tides, days, selDay: state.selDay && byDay.has(state.selDay) ? state.selDay : days[0] && days[0].day, fetchedAt: at, hasTide: seaTimes.length > 0 };
+    render();
+  }
+
+  // ---------- Darstellung ----------
+  function summaryWhy(hs) {
+    // Häufigster Grund des Tages, der gegen Kiten spricht
+    const count = new Map();
+    hs.filter(h => h.isDay).forEach(h => h.rating.reasons.filter(x => x.level >= 1).forEach(x => {
+      const k = x.text.replace(/ \(.*\)$/, "");
+      count.set(k, (count.get(k) || 0) + 1);
+    }));
+    return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]).join(" · ");
+  }
+
+  function render() {
+    const s = active();
+    $("updated").textContent = state.fetchedAt ? "Kitespot · Stand " + fmtTime(state.fetchedAt) + " Uhr" : "";
+    const d = state.days.find(x => x.day === state.selDay);
+    if (!d) return;
+    const isToday = dayName(d.day) === "Heute";
+
+    // Urteil
+    const v = $("verdict");
+    v.className = "verdict " + d.status;
+    $("vDay").textContent = dayName(d.day, true) + " · " + dateShort(d.day);
+    const remaining = isToday ? d.hours.filter(h => h.time + 3600e3 > Date.now()) : d.hours;
+    const bestNow = isToday ? L.bestWindow(remaining.filter(h => h.isDay)) : d.best;
+    const st = bestNow ? bestNow.quality : "bad";
+    v.className = "verdict " + st;
+    if (st === "good") $("vTitle").textContent = isToday ? "Heute kitebar" : "Kitebar";
+    else if (st === "ok") $("vTitle").textContent = "Grenzwertig";
+    else $("vTitle").textContent = isToday && d.best ? "Heute vorbei" : "Nicht kitebar";
+    if (bestNow) {
+      const hs = bestNow.hours;
+      $("vWin").textContent = `${fmtHour(bestNow.start)}–${fmtHour(bestNow.end)} Uhr · ${r(Math.min(...hs.map(h => h.wind)))}–${r(Math.max(...hs.map(h => h.wind)))} kn aus ${L.compass(hs[0].dir)}`;
+      const why = st === "ok" ? summaryWhy(hs) : (hs[0].rating.rel ? hs[0].rating.rel.label + " – passt für Anfänger" : "");
+      $("vWhy").textContent = why;
+    } else {
+      $("vWin").textContent = "";
+      $("vWhy").textContent = summaryWhy(remaining.length ? remaining : d.hours) || "Kein passendes Zeitfenster bei Tageslicht";
+    }
+
+    // Jetzt bzw. Mittag des gewählten Tages
+    const ref = isToday ? (state.hours.find(h => h.time <= Date.now() && h.time + 3600e3 > Date.now()) || d.hours[0])
+                        : (d.best ? d.best.hours[0] : d.hours.find(h => h.hour === 14) || d.hours[0]);
+    document.querySelector("#now .stat .k").textContent = isToday ? "Wind jetzt" : "Wind " + fmtHour(ref.time) + " Uhr";
+    $("nWind").innerHTML = `${r(ref.wind)}<small>kn</small>`;
+    $("nBft").textContent = L.beaufort(ref.wind) + " Bft";
+    $("nGust").innerHTML = `${r(ref.gust)}<small>kn</small>`;
+    $("nSpread").textContent = "+" + r(ref.gust - ref.wind) + " kn";
+    $("nDir").innerHTML = arrowSvg(ref.dir) + L.compass(ref.dir);
+    $("nRel").textContent = L.windRelation(ref.dir, s.seaDir).label;
+
+    // Stundenleiste
+    $("hoursTitle").textContent = "Stunden " + dayName(d.day).toLowerCase().replace(/^heute$/, "heute");
+    const hwHours = new Set(d.tides.filter(t => t.type === "HW").map(t => new Date(t.time).toLocaleTimeString("de-DE", { hour: "2-digit", timeZone: "Europe/Berlin" })));
+    const nowMs = Date.now();
+    $("hours").innerHTML = d.hours.filter(h => h.hour >= 6 && h.hour <= 21).map(h => {
+      const isNow = h.time <= nowMs && h.time + 3600e3 > nowMs;
+      const hw = hwHours.has(fmtHour(h.time)) ? "HW" : "";
+      const title = h.rating.reasons.map(x => x.text).join(", ");
+      return `<div class="hr ${h.rating.status}${isNow ? " now" : ""}" title="${title}">
+        <div class="bar"></div><div class="t">${isNow ? "jetzt" : fmtHour(h.time)}</div>
+        <div class="w">${r(h.wind)}</div><div class="g">${r(h.gust)}</div>${arrowSvg(h.dir)}<div class="hw">${hw}</div></div>`;
+    }).join("");
+    const firstRelevant = $("hours").querySelector(".now") || $("hours").querySelector(".good") || $("hours").querySelector(".ok");
+    if (firstRelevant) $("hours").scrollLeft = Math.max(0, firstRelevant.offsetLeft - $("hours").offsetLeft - 8);
+
+    renderTide(d, s);
+    renderWeek();
+  }
+
+  function renderTide(d, s) {
+    const box = $("tide");
+    const pts = d.hours.filter(h => h.sea != null);
+    if (pts.length < 6) {
+      box.innerHTML = `<p class="tide-note">Für diesen Spot liefert das Modell keinen Wasserstand. Bewertung läuft ohne Gezeiten.</p>`;
+      $("tideSub").textContent = "";
+      return;
+    }
+    const W = 520, H = 150, padL = 8, padR = 8, padT = 24, padB = 24;
+    const t0 = d.hours[0].time, t1 = d.hours[d.hours.length - 1].time;
+    const lv = pts.map(p => p.sea);
+    const lo = Math.min(...lv), hi = Math.max(...lv);
+    const x = t => padL + (t - t0) / (t1 - t0) * (W - padL - padR);
+    const y = v => padT + (1 - (v - lo) / ((hi - lo) || 1)) * (H - padT - padB);
+    const line = pts.map((p, i) => (i ? "L" : "M") + x(p.time).toFixed(1) + " " + y(p.sea).toFixed(1)).join(" ");
+    const area = line + ` L${x(pts[pts.length - 1].time).toFixed(1)} ${H - padB} L${x(pts[0].time).toFixed(1)} ${H - padB} Z`;
+    const clampX = v => Math.min(Math.max(v, 34), W - 34);
+    let bands = "", marks = "";
+    d.tides.forEach(t => {
+      if (t.type === "HW") {
+        if (s.tideMode !== "egal") {
+          const a = Math.max(x(t.time - s.tideWindow * 3600e3), padL), b = Math.min(x(t.time + s.tideWindow * 3600e3), W - padR);
+          bands += `<rect x="${a}" y="${padT - 6}" width="${Math.max(0, b - a)}" height="${H - padT - padB + 6}" fill="var(--good)" opacity=".13" rx="6"/>`;
+        }
+        marks += `<circle cx="${x(t.time)}" cy="${y(t.level)}" r="4" fill="var(--sea)"/><text class="hwl" x="${clampX(x(t.time))}" y="${y(t.level) - 9}" text-anchor="middle">HW ${fmtTime(t.time)}</text>`;
+      } else {
+        marks += `<circle cx="${x(t.time)}" cy="${y(t.level)}" r="3" fill="var(--muted)"/><text class="lbl" x="${clampX(x(t.time))}" y="${y(t.level) - 10}" text-anchor="middle">NW ${fmtTime(t.time)}</text>`;
+      }
+    });
+    let ticks = "";
+    for (const hr of [0, 6, 12, 18]) {
+      const h = d.hours.find(q => q.hour === hr);
+      if (h) ticks += `<text class="lbl" x="${Math.min(Math.max(x(h.time), 14), W - 14)}" y="${H - 6}" text-anchor="middle">${String(hr).padStart(2, "0")}</text><line x1="${x(h.time)}" x2="${x(h.time)}" y1="${padT - 6}" y2="${H - padB}" stroke="var(--line)"/>`;
+    }
+    const nowMs = Date.now();
+    const nowLine = nowMs > t0 && nowMs < t1 ? `<line x1="${x(nowMs)}" x2="${x(nowMs)}" y1="${padT - 8}" y2="${H - padB}" stroke="var(--accent)" stroke-width="2"/>` : "";
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Wasserstand im Tagesverlauf">${ticks}${bands}
+      <path d="${area}" fill="var(--sea-soft)"/><path d="${line}" fill="none" stroke="var(--sea)" stroke-width="2.5"/>${nowLine}${marks}</svg>
+      ${s.tideMode !== "egal" ? `<p class="tide-note">Grün markiert: Flut-Fenster ±${s.tideWindow} h um Hochwasser.</p>` : ""}`;
+    $("tideSub").textContent = "Modellwerte";
+  }
+
+  function renderWeek() {
+    $("week").innerHTML = state.days.map(d => {
+      const label = { good: "Kitebar", ok: "Grenzwertig", bad: "Nein" }[d.status];
+      const hw = d.tides.filter(t => t.type === "HW").map(t => fmtTime(t.time)).join(" / ");
+      const info = d.best
+        ? `${fmtHour(d.best.start)}–${fmtHour(d.best.end)} Uhr · ${r(Math.max(...d.best.hours.map(h => h.wind)))} kn ${L.compass(d.best.hours[0].dir)}`
+        : `max ${r(d.maxWind)} kn · ${(summaryWhy(d.hours).split(" · ")[0] || "kein Fenster").replace(" – treibt dich raus", "")}`;
+      return `<button class="dayrow${d.day === state.selDay ? " sel" : ""}" data-day="${d.day}">
+        <div class="dn">${dayName(d.day)}<small>${dateShort(d.day)}</small></div>
+        <div class="info"><b>${info}</b><span>${hw ? "HW " + hw : "&nbsp;"}</span></div>
+        <span class="chip ${d.status}">${label}</span></button>`;
+    }).join("");
+  }
+
+  $("week").addEventListener("click", e => {
+    const b = e.target.closest(".dayrow"); if (!b) return;
+    state.selDay = b.dataset.day; render();
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  });
+  $("refreshBtn").addEventListener("click", load);
+
+  // ---------- Einstellungen ----------
+  let draft = null;
+  function openSheet() {
+    draft = { ...active() };
+    fillForm(); renderSpotList();
+    $("sheet").hidden = false; $("sheetBack").hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function closeSheet() { $("sheet").hidden = true; $("sheetBack").hidden = true; document.body.style.overflow = ""; $("results").innerHTML = ""; $("search").value = ""; }
+  function renderSpotList() {
+    $("spotList").innerHTML = spots.map(s => `<div class="spot-item${s.id === activeId ? " active" : ""}">
+      <button class="pick" data-id="${s.id}"><span class="n"></span><span class="m">${s.minWind}–${s.maxWind} kn · Meer im ${L.compass(s.seaDir)}</span></button>
+      ${spots.length > 1 ? `<button class="del" data-del="${s.id}" aria-label="Spot löschen">×</button>` : ""}</div>`).join("");
+    [...$("spotList").querySelectorAll(".n")].forEach((el, i) => { el.textContent = spots[i].name; });
+  }
+  function fillForm() {
+    $("editTitle").textContent = spots.find(s => s.id === draft.id) ? "Spot bearbeiten" : "Neuen Spot einrichten";
+    $("fName").value = draft.name; $("fLat").value = draft.lat; $("fLon").value = draft.lon;
+    $("fMin").value = draft.minWind; $("fMax").value = draft.maxWind; $("fGust").value = draft.maxGust;
+    $("fTideWin").value = draft.tideWindow;
+    [...$("tideSeg").children].forEach(b => b.classList.toggle("on", b.dataset.v === draft.tideMode));
+    const order = ["N","NNO","NO","ONO","O","OSO","SO","SSO","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+    $("seaPick").innerHTML = order.map(n => { const deg = DIRS.find(d => d[0] === n)[1]; return `<button data-deg="${deg}" class="${deg === draft.seaDir ? "on" : ""}">${n}</button>`; }).join("");
+  }
+  $("seaPick").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; draft.seaDir = +b.dataset.deg; fillForm(); });
+  $("tideSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; draft.tideMode = b.dataset.v; fillForm(); });
+  $("spotList").addEventListener("click", e => {
+    const del = e.target.closest("[data-del]");
+    if (del) {
+      spots = spots.filter(s => s.id !== del.dataset.del);
+      if (activeId === del.dataset.del) activeId = spots[0].id;
+      store.set("kc.spots", spots); store.set("kc.active", activeId);
+      draft = { ...active() }; fillForm(); renderSpotList(); load(); return;
+    }
+    const p = e.target.closest("[data-id]"); if (!p) return;
+    activeId = p.dataset.id; store.set("kc.active", activeId);
+    closeSheet(); state.selDay = null; load();
+  });
+  $("saveSpot").addEventListener("click", () => {
+    const num = (id, d) => { const v = parseFloat($(id).value.replace(",", ".")); return isFinite(v) ? v : d; };
+    draft.name = $("fName").value.trim() || "Mein Spot";
+    draft.lat = num("fLat", draft.lat); draft.lon = num("fLon", draft.lon);
+    draft.minWind = num("fMin", 12); draft.maxWind = Math.max(num("fMax", 22), draft.minWind + 1); draft.maxGust = num("fGust", 25);
+    draft.tideWindow = Math.min(6, Math.max(1, num("fTideWin", 2)));
+    const i = spots.findIndex(s => s.id === draft.id);
+    if (i >= 0) spots[i] = draft; else spots.push(draft);
+    activeId = draft.id;
+    store.set("kc.spots", spots); store.set("kc.active", activeId);
+    closeSheet(); load();
+  });
+  $("resetSpot").addEventListener("click", () => {
+    const base = draft.id === DEFAULT_SPOT.id ? DEFAULT_SPOT : { ...DEFAULT_SPOT, id: draft.id, name: draft.name, lat: draft.lat, lon: draft.lon, seaDir: draft.seaDir };
+    draft = { ...base }; fillForm();
+  });
+
+  let searchTimer = null;
+  $("search").addEventListener("input", e => {
+    clearTimeout(searchTimer);
+    const q = e.target.value.trim();
+    if (q.length < 2) { $("results").innerHTML = ""; return; }
+    searchTimer = setTimeout(async () => {
+      try {
+        const res = await fetchJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=de&format=json`);
+        const list = res.results || [];
+        $("results").innerHTML = list.length ? "" : `<small>Nichts gefunden.</small>`;
+        list.forEach(p => {
+          const b = document.createElement("button");
+          b.innerHTML = `<b></b><br><small></small>`;
+          b.querySelector("b").textContent = p.name;
+          b.querySelector("small").textContent = [p.admin1, p.country].filter(Boolean).join(", ");
+          b.addEventListener("click", () => {
+            draft = { ...DEFAULT_SPOT, id: "s" + Date.now().toString(36), name: p.name, lat: +p.latitude.toFixed(4), lon: +p.longitude.toFixed(4), seaDir: 0, tideMode: "egal" };
+            $("results").innerHTML = ""; $("search").value = "";
+            fillForm();
+            $("editTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+          $("results").appendChild(b);
+        });
+      } catch (err) { $("results").innerHTML = `<small>Suche gerade nicht möglich.</small>`; }
+    }, 350);
+  });
+
+  $("settingsBtn").addEventListener("click", openSheet);
+  $("spotBtn").addEventListener("click", openSheet);
+  $("closeSheet").addEventListener("click", closeSheet);
+  $("sheetBack").addEventListener("click", closeSheet);
+
+  // Beim Zurückkehren in die App neu laden, wenn Daten älter als 30 Min
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && (!state.fetchedAt || Date.now() - state.fetchedAt > 30 * 60e3)) load();
+  });
+  // Doppeltipp-Zoom auf iOS unterbinden
+  let lastTouch = 0;
+  document.addEventListener("touchend", e => { const n = Date.now(); if (n - lastTouch < 300) e.preventDefault(); lastTouch = n; }, { passive: false });
+
+  load();
+})();
+</script>
+</body>
+</html>
