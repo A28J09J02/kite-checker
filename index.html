@@ -364,6 +364,8 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
 .leaflet-popup-content b { font-family: var(--f-display); font-size: 16px; }
 .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 .leaflet-control-attribution { font-size: 9px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6); } }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6); }
 .pop-btn { margin-top: 8px; width: 100%; border: 0; border-radius: 10px; padding: 8px 10px; font-weight: 700; background: var(--fg); color: var(--bg); }
 .home-pin { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.3); }
 .radar-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
@@ -1527,10 +1529,9 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
       if (!map) {
         $("mapMsg").textContent = "";
         map = window.L_.map("map", { zoomControl: true, attributionControl: true, scrollWheelZoom: false });
-        const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-        window.L_.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "light_all"}/{z}/{x}/{y}{r}.png`, {
-          maxZoom: 15, subdomains: "abcd",
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/attributions">CARTO</a>',
+        window.L_.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 15,
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(map);
         map.setView(home ? [home.lat, home.lon] : [54, 8.5], 7);
         mapLayer = window.L_.layerGroup().addTo(map);
