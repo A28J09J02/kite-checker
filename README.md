@@ -11,6 +11,16 @@ Features:
 - Wochenübersicht mit Wettersymbol und Stunden-Leiste
 - Spot-Leiste zum schnellen Wechseln, Katalog bekannter Nord-/Ostsee-Spots, „In meiner Nähe“
 - Vorhersage teilen (WhatsApp & Co.) und Spots als Link an andere schicken
+- Vorhersage-Sicherheit: Vergleich von 7 Wettermodellen (ICON, ECMWF, HARMONIE, AROME, UKMO, GFS)
+- Live-Wind der nächsten DWD-Station (über Bright Sky)
+- Winddiagramm mit Böen, Modell-Spanne und eigenem Windbereich
+- Kalender & Logbuch: Sessions planen und eintragen, Statistik, Sicherung als Datei
+- Optional: Gewicht für einen Schirmgrößen-Richtwert, Webcam-Link pro Spot
+
+## Wind-Alarm
+Die GitHub Action `.github/workflows/wind-alarm.yml` läuft jeden Morgen (ca. 6:15 Uhr), prüft die Spots aus `alarm.json`
+und schickt bei kitebaren Fenstern eine Push-Nachricht über [ntfy](https://ntfy.sh).
+In der ntfy-App das Thema aus `alarm.json` abonnieren. Testen: Actions → Wind-Alarm → Run workflow.
 Standard-Spot: Norddeich (Kiteschule), Anfänger-Einstellungen 12–22 kn, Flut bevorzugt.
 
 ## Online stellen (GitHub Pages)

@@ -1,0 +1,20 @@
+{
+  "topic": "kitecheck-caafd47754",
+  "time": "6:15",
+  "days": 3,
+  "notifyOk": false,
+  "url": "https://a28j09j02.github.io/kite-checker/",
+  "spots": [
+    {
+      "name": "Norddeich",
+      "lat": 53.6365,
+      "lon": 7.1405,
+      "seaDir": 337.5,
+      "minWind": 12,
+      "maxWind": 22,
+      "maxGust": 25,
+      "tideMode": "bevorzugt",
+      "tideWindow": 2
+    }
+  ]
+}

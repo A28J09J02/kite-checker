@@ -215,6 +215,63 @@
     })).filter(h => h.wind != null && h.dir != null);
   }
 
+  // Wettermodelle für den Vergleich (Open-Meteo)
+  const MODELS = [
+    { key: "icon_seamless", label: "ICON (DWD)" },
+    { key: "ecmwf_ifs025", label: "ECMWF" },
+    { key: "knmi_seamless", label: "HARMONIE (KNMI)" },
+    { key: "dmi_seamless", label: "HARMONIE (DMI)" },
+    { key: "meteofrance_seamless", label: "AROME (Météo-France)" },
+    { key: "ukmo_seamless", label: "UKMO (UK)" },
+    { key: "gfs_seamless", label: "GFS (USA)" },
+  ];
+
+  // Hängt die Modellwerte an die Stunden: h.models, h.mMin, h.mMax
+  function attachModels(hours, mm) {
+    if (!mm || !mm.hourly || !mm.hourly.time) return 0;
+    const idx = new Map(mm.hourly.time.map((t, i) => [t, i]));
+    let used = 0;
+    for (const h of hours) {
+      const i = idx.get(h.iso);
+      if (i == null) continue;
+      const list = [];
+      for (const m of MODELS) {
+        const w = mm.hourly["wind_speed_10m_" + m.key], d = mm.hourly["wind_direction_10m_" + m.key];
+        if (w && w[i] != null) list.push({ key: m.key, label: m.label, wind: w[i], dir: d ? d[i] : null });
+      }
+      if (list.length >= 2) {
+        h.models = list;
+        h.mMin = Math.min(...list.map(x => x.wind));
+        h.mMax = Math.max(...list.map(x => x.wind));
+        used = Math.max(used, list.length);
+      }
+    }
+    return used;
+  }
+
+  // Wie einig sind sich die Modelle in einem Zeitraum? Wind-Spanne + Richtungsstreuung
+  function confidence(hours) {
+    const hs = hours.filter(h => h.models);
+    if (!hs.length) return null;
+    const spread = hs.reduce((a, h) => a + (h.mMax - h.mMin), 0) / hs.length;
+    const dirSpread = hs.reduce((a, h) => {
+      const ds = h.models.filter(m => m.dir != null).map(m => angleDiff(m.dir, h.dir));
+      return a + (ds.length ? Math.max(...ds) : 0);
+    }, 0) / hs.length;
+    const lo = Math.min(...hs.map(h => h.mMin)), hi = Math.max(...hs.map(h => h.mMax));
+    let level = 0;
+    if (spread > 9 || dirSpread > 70) level = 2;
+    else if (spread > 5 || dirSpread > 40) level = 1;
+    return { level, label: ["hoch", "mittel", "niedrig"][level], spread, dirSpread, lo, hi, n: hs[0].models.length };
+  }
+
+  // Grober Richtwert für die Schirmgröße (Faustformel: 2,2 × Gewicht ÷ Wind in kn)
+  function kiteSize(weightKg, windKn) {
+    if (!weightKg || !windKn || windKn < 6) return null;
+    const s = 2.2 * weightKg / windKn;
+    return Math.min(17, Math.max(5, Math.round(s)));
+  }
+
   // Bekannte Spots als Startpunkt. seaDir = Richtung, in der vom Strand aus das Meer liegt (grob).
   const CATALOG = [
     { name: "Norddeich", region: "Ostfriesland", lat: 53.6365, lon: 7.1405, seaDir: 337.5, tideMode: "bevorzugt" },
@@ -232,7 +289,7 @@
     { name: "Zandvoort", region: "Niederlande", lat: 52.3730, lon: 4.5270, seaDir: 270, tideMode: "egal" },
   ];
 
-  const api = { angleDiff, windRelation, compass, beaufort, weatherInfo, wetsuit, distanceKm, findTides, hoursToNearestHW, tideTrend, rateHour, windows, bestWindow, nextWindow, buildHours, CATALOG };
+  const api = { angleDiff, windRelation, compass, beaufort, weatherInfo, wetsuit, distanceKm, findTides, hoursToNearestHW, tideTrend, rateHour, windows, bestWindow, nextWindow, buildHours, MODELS, attachModels, confidence, kiteSize, CATALOG };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.KiteLogic = api;
 })(typeof window !== "undefined" ? window : globalThis);
