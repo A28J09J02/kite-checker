@@ -1,6 +1,16 @@
 # Kite-Checker
 
 Zeigt auf einen Blick, ob heute an deinem Spot Kitewetter ist: Wind, Böen, Windrichtung zur Küste und Gezeiten.
+
+Features:
+- Urteil mit bestem Zeitfenster und „Nächste Chance“, wenn heute nichts geht
+- Spot-Kompass: zeigt, aus welchen Richtungen der Wind am Spot gut/grenzwertig/ablandig ist
+- Wassertemperatur, Luft (gefühlt), Wellen, Sonnenauf-/-untergang
+- Neopren-Empfehlung nach Wassertemperatur
+- Stunden antippen für Details (Gründe, Regen, Wolken, Tide steigt/fällt)
+- Wochenübersicht mit Wettersymbol und Stunden-Leiste
+- Spot-Leiste zum schnellen Wechseln, Katalog bekannter Nord-/Ostsee-Spots, „In meiner Nähe“
+- Vorhersage teilen (WhatsApp & Co.) und Spots als Link an andere schicken
 Standard-Spot: Norddeich (Kiteschule), Anfänger-Einstellungen 12–22 kn, Flut bevorzugt.
 
 ## Online stellen (GitHub Pages)
