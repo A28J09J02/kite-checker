@@ -15,6 +15,8 @@ Features:
 - Live-Wind der nächsten DWD-Station (über Bright Sky)
 - Winddiagramm mit Böen, Modell-Spanne und eigenem Windbereich
 - Kalender & Logbuch: Sessions planen und eintragen, Statistik, Sicherung als Datei
+- Spot-Radar: Karte ab deinem Wohnort mit Ampel für alle bekannten Spots, sortiert nach Bedingungen und Entfernung
+- Ansichten Vorhersage / Spot-Radar / Logbuch über die Leiste unten, Tagesauswahl oben
 - Optional: Gewicht für einen Schirmgrößen-Richtwert, Webcam-Link pro Spot
 
 ## Wind-Alarm

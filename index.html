@@ -325,6 +325,58 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
 .alarm code { font: 500 13px var(--f-data); background: var(--surface-2); padding: 2px 6px; border-radius: 6px; word-break: break-all; -webkit-user-select: text; user-select: text; }
 .weblink { font: 500 12px var(--f-data); color: var(--sea); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
 .weblink .ic { width: 14px; height: 14px; vertical-align: 0; }
+/* Ansichten & Tab-Leiste */
+.view { display: flex; flex-direction: column; gap: 18px; }
+body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  padding: 6px max(10px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-right, 0px));
+  background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+.tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 4px; font: 700 11px var(--f-body); color: var(--muted); border-radius: 12px; max-width: 180px; justify-self: center; width: 100%; }
+.tabbar button .ic { width: 22px; height: 22px; vertical-align: 0; }
+.tabbar button.on { color: var(--accent); background: var(--accent-soft); }
+.toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+
+/* Tagesleiste */
+.daystrip { display: flex; gap: 6px; overflow-x: auto; margin: -6px -16px 0; padding: 2px 16px 2px; scrollbar-width: none; }
+.daystrip::-webkit-scrollbar { display: none; }
+.dpill { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 6px 10px 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 54px; }
+.dpill b { font: 700 13px var(--f-display); }
+.dpill small { font: 500 10px var(--f-data); color: var(--muted); }
+.dpill i { width: 22px; height: 4px; border-radius: 2px; background: var(--night); opacity: .5; }
+.dpill i.good { background: var(--good); opacity: 1; } .dpill i.ok { background: var(--ok); opacity: 1; } .dpill i.bad { background: var(--bad); opacity: .7; }
+.dpill.on { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.dpill.on small { color: var(--bg); opacity: .7; }
+
+/* Spot-Radar */
+.home { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.home > .ic { color: var(--accent); width: 22px; height: 22px; vertical-align: 0; }
+.home .ht { flex: 1; min-width: 0; }
+.home .ht b { display: block; font-family: var(--f-display); font-size: 16px; }
+.home .ht span { font-size: 13px; color: var(--muted); }
+.home .linkbtn { flex: none; }
+.radar-search { display: flex; flex-direction: column; gap: 8px; margin-top: -8px; }
+.mapbox { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: var(--sea-soft); }
+#map { height: 340px; width: 100%; }
+.map-msg { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; color: var(--muted); pointer-events: none; text-align: center; padding: 20px; }
+.leaflet-container { font: inherit; background: var(--sea-soft); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); color: var(--fg); border-radius: 14px; }
+.leaflet-popup-content { margin: 12px 14px; font-size: 14px; line-height: 1.35; }
+.leaflet-popup-content b { font-family: var(--f-display); font-size: 16px; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.leaflet-control-attribution { font-size: 9px; }
+.pop-btn { margin-top: 8px; width: 100%; border: 0; border-radius: 10px; padding: 8px 10px; font-weight: 700; background: var(--fg); color: var(--bg); }
+.home-pin { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.3); }
+.radar-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.ritem { display: grid; grid-template-columns: 12px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; width: 100%; }
+.ritem:first-child { border-top: 0; }
+.ritem.sel { background: var(--sea-soft); }
+.ritem .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--night); }
+.ritem .dot.good { background: var(--good); } .ritem .dot.ok { background: var(--ok); } .ritem .dot.bad { background: var(--bad); }
+.ritem .rt { min-width: 0; }
+.ritem .rt b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ritem .rt span { display: block; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ritem .rt .ic { width: 13px; height: 13px; vertical-align: -2px; }
+.ritem .mine { font: 700 10px var(--f-body); color: var(--accent); margin-left: 4px; }
 @media (max-width: 360px) { .cond .bub { display: none; } .stat .v { font-size: 22px; } }
 @media (prefers-reduced-motion: reduce) { .spin .ic { animation: none; } .toast { transition: none; } }
 </style>
@@ -376,6 +428,9 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
   <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4"/></symbol>
 </svg>
 
@@ -398,6 +453,9 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
   </div>
 
   <div id="error" class="err" hidden></div>
+
+  <div class="view" id="vForecast">
+  <nav class="daystrip" id="dayStrip" aria-label="Tag wählen"></nav>
 
   <section class="verdict" id="verdict">
     <svg class="ic mark" aria-hidden="true"><use href="#i-kite"/></svg>
@@ -455,12 +513,28 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
     <div class="sec-h"><h2>Diese Woche</h2><span id="weekSub">Tippen für Details</span></div>
     <div class="week" id="week"></div>
   </section>
+  </div>
 
-  <section>
-    <div class="sec-h"><h2>Kalender & Logbuch</h2><span id="calSub"></span></div>
+  <div class="view" id="vMap" hidden>
+    <div class="sec-h" style="margin:0"><h2 style="font-size:22px">Spot-Radar</h2><span id="radarSub"></span></div>
+    <div class="home" id="homeBar"></div>
+    <div class="radar-search" id="homeSearch" hidden>
+      <div class="searchbox"><svg class="ic"><use href="#i-search"/></svg><input type="text" id="homeInput" placeholder="Dein Wohnort, z. B. Münster oder Emden" autocomplete="off" aria-label="Wohnort suchen"></div>
+      <div class="results" id="homeResults"></div>
+      <button class="btn ghost" id="homeGps"><svg class="ic"><use href="#i-locate"/></svg>Aktuellen Standort verwenden</button>
+    </div>
+    <nav class="daystrip" id="radarDays" aria-label="Tag für die Karte"></nav>
+    <div class="mapbox"><div id="map" role="application" aria-label="Karte der Kitespots"></div><div class="map-msg" id="mapMsg">Lädt Karte …</div></div>
+    <div class="legend"><span><i style="background:var(--good)"></i>kitebar</span><span><i style="background:var(--ok)"></i>grenzwertig</span><span><i style="background:var(--bad)"></i>nicht kitebar</span><span><i style="background:var(--accent);border-radius:50%"></i>du</span></div>
+    <div class="radar-list" id="radarList"></div>
+    <span class="hint" id="radarHint"></span>
+  </div>
+
+  <div class="view" id="vLog" hidden>
+    <div class="sec-h" style="margin:0"><h2 style="font-size:22px">Kalender & Logbuch</h2><span id="calSub"></span></div>
     <div class="stats" id="stats"></div>
-    <div class="cal" id="cal" style="margin-top:10px"></div>
-  </section>
+    <div class="cal" id="cal"></div>
+  </div>
 
   <p class="note">
     Vorhersage ohne Gewähr. Als Anfänger immer kurz bei der Kiteschule nachfragen, bevor ihr rausgeht – besonders bei ablandigem Wind, Gewitter oder ablaufendem Wasser.
@@ -468,6 +542,12 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
     Daten: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>.
   </p>
 </div>
+
+<nav class="tabbar" id="tabbar" aria-label="Ansicht">
+  <button data-view="vForecast" class="on"><svg class="ic"><use href="#i-wind"/></svg>Vorhersage</button>
+  <button data-view="vMap"><svg class="ic"><use href="#i-map"/></svg>Spot-Radar</button>
+  <button data-view="vLog"><svg class="ic"><use href="#i-cal"/></svg>Logbuch</button>
+</nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -853,6 +933,7 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
     renderLive();
     renderPlanned();
     renderCalendar();
+    renderDayStrip();
   }
 
   function renderLive() {
@@ -1290,6 +1371,246 @@ input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; 
       $("copyTopic").addEventListener("click", async () => { try { await navigator.clipboard.writeText(c.topic); toast("Thema kopiert"); } catch (e) { toast("Kopieren nicht möglich"); } });
     } catch (e) { box.innerHTML = `<span class="tiny">Wind-Alarm ist noch nicht eingerichtet.</span>`; }
   }
+
+  // ---------- Tagesleiste ----------
+  function dayPills(sel, statusOf) {
+    return state.days.map(d => `<button class="dpill${d.day === sel ? " on" : ""}" data-day="${d.day}"><b>${dayName(d.day)}</b><small>${dateShort(d.day)}</small><i class="${statusOf(d.day) || ""}"></i></button>`).join("");
+  }
+  function renderDayStrip() {
+    $("dayStrip").innerHTML = dayPills(state.selDay, day => {
+      const d = state.days.find(x => x.day === day); if (!d) return "";
+      if (day !== todayIso()) return d.status;
+      const w = L.bestWindow(d.hours.filter(h => h.isDay && h.time + 3600e3 > Date.now()));
+      return w ? w.quality : "bad";
+    });
+    const on = $("dayStrip").querySelector(".on");
+    if (on) $("dayStrip").scrollLeft = Math.max(0, on.offsetLeft - $("dayStrip").offsetLeft - 60);
+  }
+  $("dayStrip").addEventListener("click", e => { const b = e.target.closest(".dpill"); if (b) { state.selDay = b.dataset.day; state.selHour = null; render(); } });
+
+  // ---------- Ansichten ----------
+  let view = "vForecast";
+  function showView(v, keepScroll) {
+    view = v;
+    ["vForecast", "vMap", "vLog"].forEach(id => { $(id).hidden = id !== v; });
+    [...$("tabbar").children].forEach(b => b.classList.toggle("on", b.dataset.view === v));
+    $("chips").hidden = v !== "vForecast";
+    $("importBanner").hidden = !pendingImport || v !== "vForecast";
+    if (!keepScroll) window.scrollTo({ top: 0 });
+    if (v === "vMap") openRadar();
+    if (v === "vLog") renderCalendar();
+  }
+  $("tabbar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && b.dataset.view !== view) showView(b.dataset.view); });
+
+  // ---------- Spot-Radar ----------
+  let home = store.get("kc.home", null);
+  let radar = { day: null, data: null, at: 0, key: "", sel: null, results: [] };
+  let map = null, mapLayer = null, leafletP = null;
+
+  const radarSpots = () => {
+    const list = L.CATALOG.map(c => ({ ...c }));
+    spots.forEach(s => { if (!list.some(c => c.name === s.name)) list.push({ name: s.name, region: "Dein Spot", lat: s.lat, lon: s.lon, seaDir: s.seaDir, tideMode: s.tideMode }); });
+    return list.map(c => ({ ...c, mine: spots.some(s => s.name === c.name), km: home ? L.distanceKm(home.lat, home.lon, c.lat, c.lon) : null }));
+  };
+
+  function loadLeaflet() {
+    if (window.L_ && window.L_.map) return Promise.resolve(window.L_);
+    if (leafletP) return leafletP;
+    leafletP = new Promise((res, rej) => {
+      const css = document.createElement("link");
+      css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+      document.head.appendChild(css);
+      const sc = document.createElement("script");
+      sc.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+      sc.onload = () => { window.L_ = window.L; res(window.L); };
+      sc.onerror = () => { leafletP = null; rej(new Error("leaflet")); };
+      document.head.appendChild(sc);
+    });
+    return leafletP;
+  }
+
+  function renderHome() {
+    $("homeBar").innerHTML = home
+      ? `${icon("home")}<div class="ht"><b>Von ${esc(home.name)}</b><span>Beste Spots in deiner Nähe</span></div><button class="linkbtn" id="homeEdit">${icon("edit")}Ändern</button>`
+      : `${icon("home")}<div class="ht"><b>Wo wohnst du?</b><span>Dann zeigt die Karte die besten Spots in deiner Nähe</span></div><button class="linkbtn" id="homeEdit">${icon("search")}Festlegen</button>`;
+    $("homeSearch").hidden = !!home && !$("homeSearch").dataset.open;
+  }
+  $("homeBar").addEventListener("click", e => {
+    if (!e.target.closest("#homeEdit")) return;
+    const open = $("homeSearch").hidden;
+    $("homeSearch").hidden = !open; $("homeSearch").dataset.open = open ? "1" : "";
+    if (open) setTimeout(() => $("homeInput").focus(), 50);
+  });
+  function setHome(h) {
+    home = h; store.set("kc.home", h);
+    $("homeSearch").hidden = true; $("homeSearch").dataset.open = ""; $("homeInput").value = ""; $("homeResults").innerHTML = "";
+    renderHome(); renderRadar(true); toast("Wohnort: " + h.name);
+  }
+  let homeTimer = null;
+  $("homeInput").addEventListener("input", e => {
+    clearTimeout(homeTimer);
+    const q = e.target.value.trim();
+    if (q.length < 2) { $("homeResults").innerHTML = ""; return; }
+    homeTimer = setTimeout(async () => {
+      try {
+        const res = await fetchJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=de&format=json`);
+        const list = res.results || [];
+        $("homeResults").innerHTML = list.length ? "" : `<small>Nichts gefunden.</small>`;
+        list.forEach(p => {
+          const b = document.createElement("button");
+          b.innerHTML = `<b></b><br><small></small>`;
+          b.querySelector("b").textContent = p.name;
+          b.querySelector("small").textContent = [p.admin1, p.country].filter(Boolean).join(", ");
+          b.addEventListener("click", () => setHome({ name: p.name, lat: +p.latitude.toFixed(4), lon: +p.longitude.toFixed(4) }));
+          $("homeResults").appendChild(b);
+        });
+      } catch (err) { $("homeResults").innerHTML = `<small>Suche gerade nicht möglich.</small>`; }
+    }, 350);
+  });
+  $("homeGps").addEventListener("click", () => {
+    if (!navigator.geolocation) { toast("Standort nicht verfügbar"); return; }
+    navigator.geolocation.getCurrentPosition(p => setHome({ name: "deinem Standort", lat: +p.coords.latitude.toFixed(4), lon: +p.coords.longitude.toFixed(4) }),
+      () => toast("Standort nicht freigegeben"), { timeout: 10000, maximumAge: 600000 });
+  });
+
+  // Vorhersage für alle Spots in zwei Abfragen (Wind + Wasserstand)
+  async function fetchRadar(list) {
+    const key = list.map(c => c.lat + "," + c.lon).join("|");
+    if (radar.data && radar.key === key && Date.now() - radar.at < 30 * 60e3) return radar.data;
+    const cached = store.get("kc.radar", null);
+    if (cached && cached.key === key && Date.now() - cached.at < 30 * 60e3) { radar.data = cached.data; radar.key = key; radar.at = cached.at; return cached.data; }
+    const lat = list.map(c => c.lat).join(","), lon = list.map(c => c.lon).join(",");
+    const off = list.map(c => { const r = c.seaDir * Math.PI / 180; return [(c.lat + Math.cos(r) * 0.05).toFixed(4), (c.lon + Math.sin(r) * 0.08).toFixed(4)]; });
+    const [w, m] = await Promise.all([
+      fetchJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day&wind_speed_unit=kn&timezone=Europe%2FBerlin&forecast_days=7`),
+      fetchJson(`https://marine-api.open-meteo.com/v1/marine?latitude=${off.map(o => o[0]).join(",")}&longitude=${off.map(o => o[1]).join(",")}&hourly=sea_level_height_msl,sea_surface_temperature&timezone=Europe%2FBerlin&forecast_days=7`).catch(() => null),
+    ]);
+    const data = { w: Array.isArray(w) ? w : [w], m: m ? (Array.isArray(m) ? m : [m]) : [] };
+    radar.data = data; radar.key = key; radar.at = Date.now();
+    store.set("kc.radar", { key, at: radar.at, data });
+    return data;
+  }
+
+  function rateRadar(list, data, day) {
+    const base = active();
+    const now = Date.now();
+    return list.map((c, i) => {
+      const w = data.w[i]; if (!w || !w.hourly) return { ...c, status: "none" };
+      const hours = L.buildHours(w, data.m[i] || null);
+      const sea = hours.filter(h => h.sea != null);
+      const tides = L.findTides(sea.map(h => h.time), sea.map(h => h.sea));
+      const s = { ...base, seaDir: c.seaDir, tideMode: tides.length ? (c.tideMode || "egal") : "egal" };
+      hours.forEach(h => { h.rating = L.rateHour(h, s, tides); });
+      const hs = hours.filter(h => h.day === day && h.isDay && (day !== todayIso() || h.time + 3600e3 > now));
+      const best = L.bestWindow(hs);
+      const ssts = hours.filter(h => h.day === day && h.sst != null).map(h => h.sst);
+      const why = (() => {
+        const cnt = new Map();
+        hs.forEach(h => h.rating.reasons.filter(x => x.level === 2).forEach(x => cnt.set(x.text, (cnt.get(x.text) || 0) + 1)));
+        return ([...cnt.entries()].sort((a, b) => b[1] - a[1])[0] || [hs.length ? "" : "Kein Tageslicht mehr"])[0].replace(" – treibt dich raus", "");
+      })();
+      return { ...c, status: best ? best.quality : "bad", best, why, sst: ssts.length ? ssts.reduce((a, b) => a + b, 0) / ssts.length : null,
+        maxWind: hs.length ? Math.max(...hs.map(h => h.wind)) : null, dir: hs.length ? hs[Math.floor(hs.length / 2)].dir : null };
+    });
+  }
+
+  async function openRadar() {
+    renderHome();
+    if (!radar.day || !state.days.some(d => d.day === radar.day)) {
+      // Nach Sonnenuntergang lieber gleich morgen zeigen
+      const sun = state.sun.get(todayIso());
+      const late = sun && sun.set && Date.now() > sun.set - 3600e3;
+      radar.day = state.selDay && state.selDay !== todayIso() ? state.selDay : late && state.days[1] ? state.days[1].day : todayIso();
+    }
+    try {
+      await loadLeaflet();
+      if (!map) {
+        $("mapMsg").textContent = "";
+        map = window.L_.map("map", { zoomControl: true, attributionControl: true, scrollWheelZoom: false });
+        const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+        window.L_.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "light_all"}/{z}/{x}/{y}{r}.png`, {
+          maxZoom: 15, subdomains: "abcd",
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/attributions">CARTO</a>',
+        }).addTo(map);
+        map.setView(home ? [home.lat, home.lon] : [54, 8.5], 7);
+        mapLayer = window.L_.layerGroup().addTo(map);
+      } else setTimeout(() => map.invalidateSize(), 50);
+    } catch (e) { $("mapMsg").textContent = "Karte konnte nicht geladen werden – die Liste unten funktioniert trotzdem."; }
+    renderRadar(true);
+  }
+
+  async function renderRadar(fit) {
+    const list = radarSpots();
+    $("radarDays").innerHTML = dayPills(radar.day, () => "");
+    $("radarSub").textContent = dayName(radar.day, true);
+    $("radarHint").textContent = `Bewertet mit deinen Windwerten (${active().minWind}–${active().maxWind} kn, Böen bis ${active().maxGust}). Seerichtung der Spots grob voreingestellt, Entfernung als Luftlinie.`;
+    if (!radar.results.length) $("radarList").innerHTML = `<div class="ritem"><span class="dot"></span><div class="rt"><b>Lädt Vorhersage für ${list.length} Spots …</b></div></div>`;
+    let data;
+    try { data = await fetchRadar(list); }
+    catch (e) { $("radarList").innerHTML = `<div class="ritem"><span class="dot bad"></span><div class="rt"><b>Vorhersage nicht erreichbar</b><span>Prüf deine Verbindung und versuch es nochmal.</span></div></div>`; return; }
+    const order = { good: 0, ok: 1, bad: 2, none: 3 };
+    // Tagesleiste: bester Spot pro Tag
+    const order0 = { good: 0, ok: 1, bad: 2, none: 3 };
+    const dayBest = new Map(state.days.map(d => [d.day, rateRadar(list, data, d.day).reduce((b, x) => order0[x.status] < order0[b] ? x.status : b, "none")]));
+    $("radarDays").innerHTML = dayPills(radar.day, day => dayBest.get(day));
+    radar.results = rateRadar(list, data, radar.day).sort((a, b) => order[a.status] - order[b.status] || (a.km ?? 0) - (b.km ?? 0));
+    const res = radar.results;
+    const cnt = res.filter(x => x.status === "good").length;
+    $("radarSub").textContent = `${dayName(radar.day, true)} · ${cnt ? cnt + " kitebar" : "nichts kitebar"}`;
+    const label = { good: "Kitebar", ok: "Grenzwertig", bad: "Nein", none: "–" };
+    const line = x => x.best
+      ? `${windowText(x.best)} · ${rng(x.best.hours.map(h => h.wind))} kn ${L.compass(x.best.hours[0].dir)}`
+      : [x.maxWind != null ? "max " + r(x.maxWind) + " kn" : "", x.why].filter(Boolean).join(" · ");
+    const dist = x => x.km != null ? `${x.km < 10 ? r1(x.km) : r(x.km)} km · ca. ${dur(x.km * 1.3 / 80)} h` : x.region;
+    $("radarList").innerHTML = res.map((x, i) => `<button class="ritem${radar.sel === x.name ? " sel" : ""}" data-i="${i}">
+      <span class="dot ${x.status}"></span>
+      <div class="rt"><b>${esc(x.name)}${x.mine ? `<span class="mine">★ dein Spot</span>` : ""}</b><span>${esc(line(x))}</span><span>${x.km != null ? icon("car") + " " : ""}${esc(dist(x))}${x.sst != null ? " · Wasser " + r(x.sst) + " °C" : ""}</span></div>
+      <span class="chip ${x.status === "none" ? "night" : x.status}">${label[x.status]}</span></button>`).join("");
+    // Karte
+    if (map && mapLayer) {
+      const css = getComputedStyle(document.documentElement);
+      const col = st => css.getPropertyValue("--" + ({ good: "good", ok: "ok", bad: "bad" }[st] || "night")).trim();
+      mapLayer.clearLayers();
+      const pts = [];
+      res.forEach((x, i) => {
+        const m = window.L_.circleMarker([x.lat, x.lon], { radius: x.status === "good" ? 11 : 8, color: "#fff", weight: 2, fillColor: col(x.status), fillOpacity: x.status === "bad" ? .75 : 1 })
+          .bindPopup(`<b>${esc(x.name)}</b><br><span style="color:${col(x.status)};font-weight:700">${label[x.status]}</span> · ${esc(line(x))}<br><span style="color:var(--muted)">${esc(dist(x))}</span>
+            <button class="pop-btn" data-open="${i}">${x.mine ? "Vorhersage öffnen" : "Als Spot hinzufügen"}</button>`);
+        m.on("click", () => { radar.sel = x.name; markSel(); });
+        mapLayer.addLayer(m); x._m = m;
+        pts.push([x.lat, x.lon]);
+      });
+      if (home) {
+        mapLayer.addLayer(window.L_.marker([home.lat, home.lon], { icon: window.L_.divIcon({ className: "", html: '<div class="home-pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), title: home.name, zIndexOffset: 1000 }));
+      }
+      if (fit) {
+        if (home) {
+          const near = res.filter(x => x.km != null).sort((a, b) => a.km - b.km).slice(0, 5).map(x => [x.lat, x.lon]);
+          map.fitBounds(window.L_.latLngBounds([[home.lat, home.lon], ...near]).pad(0.15), { maxZoom: 9 });
+        } else if (pts.length) map.fitBounds(window.L_.latLngBounds(pts).pad(0.1));
+      }
+    }
+  }
+  function markSel() { $("radarList").querySelectorAll(".ritem").forEach(b => b.classList.toggle("sel", radar.results[+b.dataset.i] && radar.results[+b.dataset.i].name === radar.sel)); }
+
+  function openRadarSpot(x) {
+    const exist = spots.find(s => s.name === x.name);
+    if (exist) activeId = exist.id;
+    else { const s = { ...DEFAULT_SPOT, ...active(), name: x.name, lat: x.lat, lon: x.lon, seaDir: x.seaDir, tideMode: x.tideMode || "egal", id: "s" + Date.now().toString(36) }; delete s.region; delete s.cam; spots.push(s); activeId = s.id; toast(x.name + " hinzugefügt"); }
+    saveSpots(); state.selDay = radar.day; showView("vForecast"); load();
+  }
+  $("radarDays").addEventListener("click", e => { const b = e.target.closest(".dpill"); if (b) { radar.day = b.dataset.day; renderRadar(false); } });
+  $("radarList").addEventListener("click", e => {
+    const b = e.target.closest(".ritem"); if (!b || b.dataset.i == null) return;
+    const x = radar.results[+b.dataset.i]; if (!x) return;
+    if (map && x._m) {
+      if (radar.sel === x.name) { openRadarSpot(x); return; }
+      radar.sel = x.name; markSel();
+      map.setView([x.lat, x.lon], Math.max(map.getZoom(), 8)); x._m.openPopup();
+      $("map").scrollIntoView({ behavior: "smooth", block: "center" });
+    } else openRadarSpot(x);
+  });
+  document.addEventListener("click", e => { const b = e.target.closest(".pop-btn"); if (b) { const x = radar.results[+b.dataset.open]; if (x) openRadarSpot(x); } });
 
   // ---------- Teilen ----------
   async function shareText(text, url) {
