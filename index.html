@@ -319,6 +319,15 @@ input[type=text], input[type=number], select {
 .stars button { border: 0; background: none; padding: 2px; font-size: 26px; line-height: 1; color: var(--line); }
 .stars button.on { color: var(--ok); }
 .tiny { font-size: 13px; color: var(--muted); }
+.insight { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.insight h3 { margin: 0; font: 700 17px var(--f-display); display: flex; align-items: center; gap: 7px; }
+.insight h3 .ic { width: 18px; height: 18px; color: var(--accent); vertical-align: 0; }
+.insight .ig { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.insight .ig div { background: var(--surface-2); border-radius: 12px; padding: 9px 10px; min-width: 0; }
+.insight .ig span { display: block; font: 500 11px var(--f-data); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.insight .ig b { display: block; font-size: 15px; margin-top: 2px; }
+.insight .ig small { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+.insight .tip { font-size: 14px; background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 textarea { width: 100%; min-height: 70px; font: inherit; font-size: 16px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); -webkit-user-select: text; user-select: text; resize: vertical; }
 input[type=date], input[type=url] { width: 100%; min-width: 0; font-size: 16px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); -webkit-user-select: text; user-select: text; -webkit-appearance: none; appearance: none; }
 .seg.two { grid-template-columns: 1fr 1fr; }
@@ -452,7 +461,7 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
   <nav class="chips" id="chips" aria-label="Spot wechseln"></nav>
 
   <div class="banner" id="importBanner" hidden>
-    <div><b id="importName"></b><div class="hint">Jemand hat dir diesen Spot geschickt. Willst du ihn zu deinen Spots hinzufügen?</div></div>
+    <div><b id="importName"></b><div class="hint" id="importHint">Jemand hat dir diesen Spot geschickt. Willst du ihn zu deinen Spots hinzufügen?</div></div>
     <div class="btns"><button class="btn ghost" id="importNo">Nein</button><button class="btn" id="importYes"><svg class="ic"><use href="#i-plus"/></svg>Hinzufügen</button></div>
   </div>
 
@@ -537,6 +546,7 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
   <div class="view" id="vLog" hidden>
     <div class="sec-h" style="margin:0"><h2 style="font-size:22px">Kalender & Logbuch</h2><span id="calSub"></span></div>
     <div class="stats" id="stats"></div>
+    <section class="insight" id="insight" aria-label="Deine besten Bedingungen"></section>
     <div class="cal" id="cal"></div>
   </div>
 
@@ -661,6 +671,7 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
     <span class="tiny" id="eCond"></span>
     <div class="btns">
       <button class="btn danger" id="eDel" hidden><svg class="ic"><use href="#i-trash"/></svg>Löschen</button>
+      <button class="btn ghost" id="eInvite" hidden><svg class="ic"><use href="#i-share"/></svg>Einladen</button>
       <button class="btn" id="eSave"><svg class="ic"><use href="#i-check"/></svg>Speichern</button>
     </div>
   </div>
@@ -1216,7 +1227,19 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
     const w = L.bestWindow(hs);
     const q = w ? w.quality : "bad";
     return { q, text: { good: "Laut Vorhersage kitebar 👍", ok: "Laut Vorhersage grenzwertig", bad: "Passt laut Vorhersage gerade nicht" }[q],
-      wind: `${rng(hs.map(h => h.wind))} kn ${L.compass(hs[0].dir)}` };
+      wind: `${rng(hs.map(h => h.wind))} kn ${L.compass(hs[0].dir)}`, wx: wxOf(hs, s) };
+  }
+
+  // Zahlenwerte einer Session fürs Logbuch (für die Auswertung „Deine besten Bedingungen“)
+  function wxOf(hs, s) {
+    const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const sx = hs.reduce((a, h) => a + Math.sin(h.dir * Math.PI / 180), 0), cx = hs.reduce((a, h) => a + Math.cos(h.dir * Math.PI / 180), 0);
+    const dir = Math.round(((Math.atan2(sx, cx) * 180 / Math.PI) + 360) % 360);
+    const hw = state.tides.some(t => t.type === "HW") ? avg(hs.map(h => L.hoursToNearestHW(h.time, state.tides))) : null;
+    const ssts = hs.map(h => h.sst).filter(v => v != null);
+    return { wind: Math.round(avg(hs.map(h => h.wind)) * 10) / 10, gust: Math.round(Math.max(...hs.map(h => h.gust))), dir,
+      rel: L.windRelation(dir, s.seaDir).key, hw: hw != null && isFinite(hw) ? Math.round(hw * 10) / 10 : null,
+      sst: ssts.length ? Math.round(avg(ssts) * 10) / 10 : null };
   }
 
   function renderPlanned() {
@@ -1242,6 +1265,8 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
       <div class="stat"><span class="k"><svg class="ic"><use href="#i-kite"/></svg>Sessions</span><span class="v">${done.length}</span><span class="s">dieses Jahr</span></div>
       <div class="stat"><span class="k"><svg class="ic"><use href="#i-clock"/></svg>Stunden</span><span class="v">${hrs}</span><span class="s">gekitet</span></div>
       <div class="stat"><span class="k"><svg class="ic"><use href="#i-pin"/></svg>Spot</span><span class="v" style="font-size:16px;line-height:1.25">${fav ? esc(fav[0]) : "–"}</span><span class="s">${fav ? fav[1] + "× gekitet" : "noch keiner"}</span></div>`;
+
+    renderInsights();
 
     // Monatsraster (Montag zuerst)
     const first = new Date(cal.y, cal.m, 1);
@@ -1273,6 +1298,60 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
         ${list}
         <div class="btns">${future ? `<button class="btn ghost" data-new="plan">${icon("cal-plus")}Planen</button>` : ""}${sel <= todayIso() ? `<button class="btn ghost" data-new="done">${icon("check")}Gekitet eintragen</button>` : ""}</div></div>`;
   }
+
+  // ---------- Auswertung: Deine besten Bedingungen ----------
+  const REL_LABEL = { on: "auflandig", sideon: "schräg auflandig", side: "sideshore", off: "ablandig" };
+  function sessionWx(e) {
+    if (e.wx && isFinite(e.wx.wind)) return e.wx;
+    // Ältere Einträge: Werte aus dem Text „12–15 kn NW“ lesen
+    const m = /^(\d+)(?:–(\d+))? kn ([NOSW]{1,3})\b/.exec(e.cond || "");
+    if (!m) return null;
+    const d = DIRS.find(x => x[0] === m[3]); if (!d) return null;
+    const sp = spots.find(s => s.name === e.spot) || L.CATALOG.find(s => s.name === e.spot);
+    return { wind: m[2] ? (+m[1] + +m[2]) / 2 : +m[1], dir: d[1], rel: sp ? L.windRelation(d[1], sp.seaDir).key : null, hw: null };
+  }
+  function renderInsights() {
+    const box = $("insight");
+    const done = log.filter(e => e.type === "done");
+    if (!done.length) { box.hidden = true; return; }
+    box.hidden = false;
+    const rated = done.filter(e => e.rating).map(e => ({ e, wx: sessionWx(e) })).filter(x => x.wx);
+    const head = `<h3>${icon("kite")}Deine besten Bedingungen</h3>`;
+    if (rated.length < 2) {
+      box.innerHTML = head + `<span class="tiny">Bewerte deine gekiteten Sessions mit Sternen – ab 2 bewerteten Sessions mit Vorhersagedaten siehst du hier, bei welchem Wind, welcher Richtung und welcher Tide es für dich am besten lief. (${rated.length}/2)</span>`;
+      return;
+    }
+    const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const top = rated.filter(x => x.e.rating >= 4), low = rated.filter(x => x.e.rating <= 2);
+    const best = top.length ? top : rated.filter(x => x.e.rating >= Math.max(...rated.map(y => y.e.rating)));
+    const bw = best.map(x => x.wx.wind);
+    const relCnt = new Map(); best.forEach(x => x.wx.rel && relCnt.set(x.wx.rel, (relCnt.get(x.wx.rel) || 0) + 1));
+    const rel = [...relCnt.entries()].sort((a, b) => b[1] - a[1])[0];
+    const hws = best.map(x => x.wx.hw).filter(v => v != null);
+    const tile = (k, v, sub) => `<div><span>${k}</span><b>${v}</b><small>${sub}</small></div>`;
+    let html = head + `<div class="ig">
+      ${tile(top.length ? "Top-Sessions ★4–5" : "Beste Sessions", rng(bw) + " kn", `Ø ${r(avg(bw))} kn · ${best.length} Session${best.length > 1 ? "s" : ""}`)}
+      ${tile("Schwache ★1–2", low.length ? rng(low.map(x => x.wx.wind)) + " kn" : "–", low.length ? `Ø ${r(avg(low.map(x => x.wx.wind)))} kn · ${low.length}×` : "noch keine")}
+      ${tile("Richtung", rel ? REL_LABEL[rel[0]] : "–", rel ? `${rel[1]} von ${best.length} guten Sessions` : "keine Daten")}
+      ${tile("Tide", hws.length ? "± " + r1(avg(hws)) + " h" : "–", hws.length ? "Ø Abstand zum Hochwasser" : "keine Daten")}
+    </div>`;
+    // Vorschlag: Windbereich an die guten Sessions anpassen
+    const s = active();
+    const lo = Math.round(Math.min(...bw)), hi = Math.round(Math.max(...bw));
+    const nMin = lo, nMax = Math.max(hi, lo + 4);
+    if (best.length >= 3 && (lo > s.minWind + 1 || lo < s.minWind - 1 || hi > s.maxWind + 1) && (nMin !== s.minWind || nMax !== s.maxWind)) {
+      html += `<div class="tip"><span>Deine guten Sessions lagen bei <b>${lo}–${hi} kn</b>, dein Windbereich für ${esc(s.name)} ist ${s.minWind}–${s.maxWind} kn.</span>
+        <button class="btn ghost" id="applyRange" data-min="${nMin}" data-max="${nMax}">Bereich auf ${nMin}–${nMax} kn setzen</button></div>`;
+    }
+    box.innerHTML = html;
+  }
+  $("insight").addEventListener("click", e => {
+    const b = e.target.closest("#applyRange"); if (!b) return;
+    const s = active(), mn = +b.dataset.min, mx = +b.dataset.max;
+    if (!confirm(`Windbereich für „${s.name}“ auf ${mn}–${mx} kn ändern? Die Böen-Grenze bleibt bei ${s.maxGust} kn.`)) return;
+    s.minWind = mn; s.maxWind = mx; if (s.maxGust < mx) s.maxGust = mx + 3;
+    saveSpots(); load(); toast("Windbereich angepasst");
+  });
 
   $("cal").addEventListener("click", e => {
     const nav = e.target.closest("[data-nav]");
@@ -1315,6 +1394,7 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
     $("eRateF").hidden = edit.type !== "done";
     $("eRate").innerHTML = [1, 2, 3, 4, 5].map(n => `<button data-r="${n}" class="${(edit.rating || 0) >= n ? "on" : ""}" aria-label="${n} Sterne">★</button>`).join("");
     const f = forecastFor({ ...edit, date: $("eDate").value, spot: $("eSpot").value, from: +$("eFrom").value, to: +$("eTo").value });
+    $("eInvite").hidden = edit.type !== "plan";
     $("eCond").textContent = f ? "Vorhersage: " + f.wind + " – " + f.text : edit.cond ? "Bedingungen: " + edit.cond : "";
   }
   function closeEntry() { $("entrySheet").hidden = true; $("entryBack").hidden = true; document.body.style.overflow = ""; edit = null; }
@@ -1323,22 +1403,35 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
   ["eDate", "eSpot", "eFrom", "eTo"].forEach(id => $(id).addEventListener("change", () => edit && fillEntry()));
   $("closeEntry").addEventListener("click", closeEntry);
   $("entryBack").addEventListener("click", closeEntry);
-  $("eSave").addEventListener("click", () => {
+  function saveEntry() {
     const date = $("eDate").value;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast("Bitte ein Datum wählen"); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast("Bitte ein Datum wählen"); return null; }
     const from = Math.min(23, Math.max(0, parseInt($("eFrom").value, 10) || 0));
     const to = Math.min(24, Math.max(from + 1, parseInt($("eTo").value, 10) || from + 1));
     const size = parseFloat(String($("eSize").value).replace(",", "."));
     const e = { ...edit, id: edit.id || "e" + Date.now().toString(36), date, from, to, spot: $("eSpot").value, size: isFinite(size) ? size : null, note: $("eNote").value.trim().slice(0, 500) };
     if (e.type !== "done") delete e.rating;
     const f = forecastFor(e);
-    if (f) e.cond = f.wind;
+    if (f) { e.cond = f.wind; e.wx = f.wx; }
     const i = log.findIndex(x => x.id === e.id);
     if (i >= 0) log[i] = e; else log.push(e);
     saveLog();
     cal.sel = date; cal.y = +date.slice(0, 4); cal.m = +date.slice(5, 7) - 1;
     closeEntry(); renderPlanned(); renderCalendar();
-    toast(e.type === "plan" ? "Session geplant 🪁" : "Im Logbuch gespeichert");
+    return e;
+  }
+  $("eSave").addEventListener("click", () => {
+    const e = saveEntry();
+    if (e) toast(e.type === "plan" ? "Session geplant 🪁" : "Im Logbuch gespeichert");
+  });
+  // Session-Einladung: speichert die Session und schickt einen Link, der sie beim anderen in den Kalender übernimmt
+  $("eInvite").addEventListener("click", () => {
+    const e = saveEntry(); if (!e) return;
+    const sp = spots.find(x => x.name === e.spot) || active();
+    const payload = { date: e.date, from: e.from, to: e.to, spot: spotFields(sp) };
+    const f = forecastFor(e);
+    const text = `🪁 Kiten? ${e.spot}, ${dayName(e.date, true)} ${dateShort(e.date)}, ${e.from}–${e.to} Uhr` + (f ? `\nVorhersage: ${f.wind} – ${f.text}` : "") + "\nTipp auf den Link, dann steht die Session in deinem Kite-Checker:";
+    shareText(text, appUrl() + "#plan=" + b64enc(payload));
   });
   $("eDel").addEventListener("click", () => {
     if (!edit || !edit.id) return;
@@ -1380,7 +1473,7 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
     try {
       const c = await fetchJson("alarm.json?v=" + Date.now());
       const sp = (c.spots || []).map(s => esc(s.name)).join(", ");
-      box.innerHTML = `<span>Jeden Morgen gegen ${esc(c.time || "6:15")} Uhr wird die Vorhersage für <b>${sp}</b> geprüft. Gibt es in den nächsten ${c.days || 3} Tagen ein kitebares Fenster, kommt eine Push-Nachricht.</span>
+      box.innerHTML = `<span>Jeden Morgen gegen ${esc(c.time || "6:15")} Uhr wird die Vorhersage für <b>${sp}</b> geprüft. Gibt es in den nächsten ${c.days || 3} Tagen ein kitebares Fenster, kommt eine Push-Nachricht.${c.evening !== false ? ` Zusätzlich gegen ${esc(c.eveningTime || "19:15")} Uhr eine Abend-Vorschau, wenn morgen kitebar ist.` : ""}</span>
         <span>So bekommst du sie: App <b>ntfy</b> (kostenlos) aus dem App Store laden → „+“ → Thema eintragen:</span>
         <code>${esc(c.topic)}</code>
         <div class="btns"><button class="btn ghost" id="copyTopic">Thema kopieren</button><a class="btn ghost" href="https://ntfy.sh/${encodeURIComponent(c.topic)}" target="_blank" rel="noopener" style="text-decoration:none">Im Browser ansehen</a></div>
@@ -1654,42 +1747,68 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
   });
 
   // Spot als Link teilen: alle Einstellungen stecken im #spot=… der Adresse
-  const encodeSpot = s => {
-    const { name, lat, lon, seaDir, minWind, maxWind, maxGust, tideMode, tideWindow } = s;
-    const json = JSON.stringify({ name, lat, lon, seaDir, minWind, maxWind, maxGust, tideMode, tideWindow });
-    return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  };
-  const decodeSpot = str => {
+  const spotFields = s => { const { name, lat, lon, seaDir, minWind, maxWind, maxGust, tideMode, tideWindow } = s; return { name, lat, lon, seaDir, minWind, maxWind, maxGust, tideMode, tideWindow }; };
+  const b64enc = o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const b64dec = str => JSON.parse(decodeURIComponent(escape(atob(str.replace(/-/g, "+").replace(/_/g, "/")))));
+  const encodeSpot = s => b64enc(spotFields(s));
+  const decodeSpot = str => { try { return cleanSpot(b64dec(str)); } catch (e) { return null; } };
+  const decodePlan = str => {
     try {
-      const b = str.replace(/-/g, "+").replace(/_/g, "/");
-      const o = JSON.parse(decodeURIComponent(escape(atob(b))));
-      const num = (v, lo, hi, d) => (typeof v === "number" && isFinite(v) && v >= lo && v <= hi ? v : d);
-      if (typeof o.name !== "string" || !isFinite(o.lat) || !isFinite(o.lon)) return null;
-      return {
-        name: o.name.slice(0, 40), lat: num(o.lat, -90, 90, 0), lon: num(o.lon, -180, 180, 0), seaDir: num(o.seaDir, 0, 360, 0),
-        minWind: num(o.minWind, 0, 60, 12), maxWind: num(o.maxWind, 1, 70, 22), maxGust: num(o.maxGust, 1, 80, 25),
-        tideMode: ["pflicht", "bevorzugt", "egal"].includes(o.tideMode) ? o.tideMode : "egal", tideWindow: num(o.tideWindow, 1, 6, 2),
-      };
+      const o = b64dec(str), spot = cleanSpot(o.spot || {});
+      const hr = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
+      const from = hr(o.from, 0, 23), to = hr(o.to, 1, 24);
+      if (!spot || typeof o.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.date) || from == null || to == null || to <= from) return null;
+      return { date: o.date, from, to, spot };
     } catch (e) { return null; }
   };
+  function cleanSpot(o) {
+    const num = (v, lo, hi, d) => (typeof v === "number" && isFinite(v) && v >= lo && v <= hi ? v : d);
+    if (!o || typeof o.name !== "string" || !o.name.trim() || typeof o.lat !== "number" || typeof o.lon !== "number" || !isFinite(o.lat) || !isFinite(o.lon)) return null;
+    return {
+      name: o.name.trim().slice(0, 40), lat: num(o.lat, -90, 90, 0), lon: num(o.lon, -180, 180, 0), seaDir: num(o.seaDir, 0, 360, 0),
+      minWind: num(o.minWind, 0, 60, 12), maxWind: num(o.maxWind, 1, 70, 22), maxGust: num(o.maxGust, 1, 80, 25),
+      tideMode: ["pflicht", "bevorzugt", "egal"].includes(o.tideMode) ? o.tideMode : "egal", tideWindow: num(o.tideWindow, 1, 6, 2),
+    };
+  }
 
   let pendingImport = null;
   function checkImport() {
-    const m = location.hash.match(/^#spot=([A-Za-z0-9_-]+)/);
+    const m = location.hash.match(/^#(spot|plan)=([A-Za-z0-9_-]+)/);
     if (!m) return;
-    pendingImport = decodeSpot(m[1]);
     history.replaceState(null, "", location.pathname + location.search);
-    if (!pendingImport) return;
-    $("importName").textContent = "📍 " + pendingImport.name;
+    if (m[1] === "spot") {
+      const spot = decodeSpot(m[2]);
+      pendingImport = spot ? { kind: "spot", spot } : null;
+      if (!pendingImport) return;
+      $("importName").textContent = "📍 " + spot.name;
+      $("importHint").textContent = "Jemand hat dir diesen Spot geschickt. Willst du ihn zu deinen Spots hinzufügen?";
+    } else {
+      const p = decodePlan(m[2]);
+      pendingImport = p ? { kind: "plan", ...p } : null;
+      if (!pendingImport) return;
+      $("importName").textContent = `📅 ${p.spot.name} · ${longDate(p.date)} · ${p.from}–${p.to} Uhr`;
+      $("importHint").textContent = "Du bist zu einer Session eingeladen. In deinen Kalender übernehmen?" +
+        (spots.some(s => s.name === p.spot.name) ? "" : " Der Spot wird dabei mit angelegt.");
+    }
     $("importBanner").hidden = false;
   }
   $("importNo").addEventListener("click", () => { pendingImport = null; $("importBanner").hidden = true; });
   $("importYes").addEventListener("click", () => {
     if (!pendingImport) return;
-    const s = { ...DEFAULT_SPOT, ...pendingImport, id: "s" + Date.now().toString(36) };
-    spots.push(s); activeId = s.id; saveSpots();
+    const p = pendingImport;
+    let s = spots.find(x => x.name === p.spot.name);
+    if (!s) { s = { ...DEFAULT_SPOT, ...p.spot, id: "s" + Date.now().toString(36) }; spots.push(s); }
+    activeId = s.id; saveSpots();
     $("importBanner").hidden = true; pendingImport = null;
-    toast(s.name + " hinzugefügt"); state.selDay = null; load();
+    if (p.kind === "plan") {
+      if (!log.some(e => e.type === "plan" && e.date === p.date && e.from === p.from && e.spot === s.name)) {
+        log.push({ id: "e" + Date.now().toString(36), type: "plan", date: p.date, from: p.from, to: p.to, spot: s.name, note: "Eingeladen" });
+        saveLog();
+      }
+      cal.sel = p.date; cal.y = +p.date.slice(0, 4); cal.m = +p.date.slice(5, 7) - 1;
+      state.selDay = p.date; toast("Session übernommen 🪁");
+    } else { state.selDay = null; toast(s.name + " hinzugefügt"); }
+    load();
   });
 
   // ---------- Einstellungen ----------
@@ -1838,6 +1957,10 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
 
   checkImport();
   load();
+  // Offline-Start: App-Dateien im Service Worker zwischenspeichern
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
 })();
 </script>
 </body>

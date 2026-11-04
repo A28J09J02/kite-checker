@@ -18,10 +18,15 @@ Features:
 - Spot-Radar: Karte ab deinem Wohnort mit Ampel für alle bekannten Spots, sortiert nach Bedingungen und Entfernung
 - Ansichten Vorhersage / Spot-Radar / Logbuch über die Leiste unten, Tagesauswahl oben
 - Optional: Gewicht für einen Schirmgrößen-Richtwert, Webcam-Link pro Spot
+- Session-Einladung: geplante Session per Link an andere schicken, ein Tipp übernimmt sie in deren Kalender
+- Logbuch-Auswertung „Deine besten Bedingungen“: Wind, Richtung und Tide deiner besten Sessions, mit Vorschlag für deinen Windbereich
+- Offline-Start: Die App öffnet auch ohne Netz und zeigt die zuletzt geladene Vorhersage
 
 ## Wind-Alarm
 Die GitHub Action `.github/workflows/wind-alarm.yml` läuft jeden Morgen (ca. 6:15 Uhr), prüft die Spots aus `alarm.json`
 und schickt bei kitebaren Fenstern eine Push-Nachricht über [ntfy](https://ntfy.sh).
+Abends gegen 19:15 Uhr kommt zusätzlich eine Vorschau, wenn **morgen** kitebar ist (abschaltbar mit `"evening": false` in `alarm.json`).
+Die Zeiten gelten ganzjährig in deutscher Zeit (Sommer- und Winterzeit werden automatisch berücksichtigt).
 In der ntfy-App das Thema aus `alarm.json` abonnieren. Testen: Actions → Wind-Alarm → Run workflow.
 Standard-Spot: Norddeich (Kiteschule), Anfänger-Einstellungen 12–22 kn, Flut bevorzugt.
 
