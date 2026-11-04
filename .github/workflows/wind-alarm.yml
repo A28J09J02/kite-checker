@@ -2,6 +2,9 @@ name: Wind-Alarm
 
 on:
   schedule:
+    # 6:17 Uhr deutscher Zeit: im Sommer (MESZ) 4:17 UTC, im Winter (MEZ) 5:17 UTC.
+    # alarm.mjs lässt den jeweils unpassenden Lauf aus.
+    - cron: "17 4 * * *"
     - cron: "17 5 * * *"
   workflow_dispatch:
     inputs:
@@ -18,11 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
       - name: Vorhersage prüfen und Push senden
         run: node alarm.mjs
         env:
           FORCE: ${{ inputs.test }}
+          SCHEDULE: ${{ github.event.schedule }}

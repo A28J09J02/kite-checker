@@ -9,6 +9,20 @@ const cfg = JSON.parse(await readFile(new URL("./alarm.json", import.meta.url), 
 const FORCE = String(process.env.FORCE || "").toLowerCase() === "true";
 const DRY = String(process.env.DRY_RUN || "").toLowerCase() === "true";
 
+// Zwei Cron-Zeiten (4:17 und 5:17 UTC) wegen Sommer-/Winterzeit: nur die läuft,
+// die 6:17 Uhr deutscher Zeit entspricht – auch wenn GitHub den Lauf verspätet startet.
+const SCHEDULE = String(process.env.SCHEDULE || "").trim();
+if (SCHEDULE) {
+  const cronHour = +SCHEDULE.split(/\s+/)[1];
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  const offsetH = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - Date.now()) / 3600e3);
+  const wantHour = 6 - offsetH;
+  if (Number.isFinite(cronHour) && cronHour !== wantHour) {
+    console.log(`Cron ${SCHEDULE}: passt nicht zur aktuellen deutschen Zeit (UTC+${offsetH}) – übersprungen.`);
+    process.exit(0);
+  }
+}
+
 const getJson = async url => {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`HTTP ${r.status} für ${url}`);
