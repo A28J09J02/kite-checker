@@ -2,16 +2,22 @@ name: Wind-Alarm
 
 on:
   schedule:
-    # 6:17 Uhr deutscher Zeit: im Sommer (MESZ) 4:17 UTC, im Winter (MEZ) 5:17 UTC.
+    # Morgens 6:17 und abends 19:17 Uhr deutscher Zeit (UTC: Sommer 4:17/17:17, Winter 5:17/18:17).
     # alarm.mjs lässt den jeweils unpassenden Lauf aus.
     - cron: "17 4 * * *"
     - cron: "17 5 * * *"
+    - cron: "17 17 * * *"
+    - cron: "17 18 * * *"
   workflow_dispatch:
     inputs:
       test:
         description: "Auch ohne Kitefenster eine Testnachricht senden"
         type: boolean
         default: true
+      abend:
+        description: "Abend-Vorschau testen (nur morgen)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,3 +36,4 @@ jobs:
         env:
           FORCE: ${{ inputs.test }}
           SCHEDULE: ${{ github.event.schedule }}
+          MODE: ${{ inputs.abend && 'abend' || '' }}

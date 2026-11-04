@@ -3,6 +3,8 @@
   "time": "6:15",
   "days": 3,
   "notifyOk": false,
+  "evening": true,
+  "eveningTime": "19:15",
   "url": "https://a28j09j02.github.io/kite-checker/",
   "spots": [
     {

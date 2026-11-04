@@ -9,18 +9,26 @@ const cfg = JSON.parse(await readFile(new URL("./alarm.json", import.meta.url), 
 const FORCE = String(process.env.FORCE || "").toLowerCase() === "true";
 const DRY = String(process.env.DRY_RUN || "").toLowerCase() === "true";
 
-// Zwei Cron-Zeiten (4:17 und 5:17 UTC) wegen Sommer-/Winterzeit: nur die läuft,
-// die 6:17 Uhr deutscher Zeit entspricht – auch wenn GitHub den Lauf verspätet startet.
+// Cron-Zeiten in UTC: morgens 4:17/5:17 und abends 17:17/18:17 (Sommer-/Winterzeit).
+// Nur der Lauf, der 6 Uhr bzw. 19 Uhr deutscher Zeit entspricht, arbeitet – auch wenn GitHub ihn verspätet startet.
+// MODE=abend (z. B. beim manuellen Test) erzwingt die Abend-Vorschau.
 const SCHEDULE = String(process.env.SCHEDULE || "").trim();
+let MODE = String(process.env.MODE || "").toLowerCase() === "abend" ? "abend" : "morgen";
 if (SCHEDULE) {
   const cronHour = +SCHEDULE.split(/\s+/)[1];
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(x => [x.type, x.value]));
   const offsetH = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - Date.now()) / 3600e3);
-  const wantHour = 6 - offsetH;
-  if (Number.isFinite(cronHour) && cronHour !== wantHour) {
-    console.log(`Cron ${SCHEDULE}: passt nicht zur aktuellen deutschen Zeit (UTC+${offsetH}) – übersprungen.`);
+  const localHour = (cronHour + offsetH) % 24;
+  if (localHour === 6) MODE = "morgen";
+  else if (localHour === 19) MODE = "abend";
+  else {
+    console.log(`Cron ${SCHEDULE}: entspricht ${localHour} Uhr deutscher Zeit (UTC+${offsetH}) – übersprungen.`);
     process.exit(0);
   }
+}
+if (MODE === "abend" && cfg.evening === false) {
+  console.log("Abend-Vorschau ist in alarm.json ausgeschaltet.");
+  process.exit(0);
 }
 
 const getJson = async url => {
@@ -68,7 +76,9 @@ for (const s of cfg.spots) {
   hours.forEach(h => { h.rating = L.rateHour(h, s, tides); });
 
   const now = Date.now();
-  const days = [...new Set(hours.map(h => h.day))].filter(d => d >= today).slice(0, cfg.days || 3);
+  // Morgens: heute + die nächsten Tage. Abends: nur morgen.
+  const allDays = [...new Set(hours.map(h => h.day))];
+  const days = MODE === "abend" ? allDays.filter(d => d > today).slice(0, 1) : allDays.filter(d => d >= today).slice(0, cfg.days || 3);
   for (const day of days) {
     const hs = hours.filter(h => h.day === day && h.isDay && h.time + 3600e3 > now);
     const w = L.bestWindow(hs);
@@ -90,8 +100,10 @@ if (!lines.length && !FORCE) {
 
 const msg = {
   topic: cfg.topic,
-  title: lines.length ? (anyGood ? "🪁 Kitewetter in Sicht!" : "🪁 Vielleicht Kitewetter") : "🪁 Kite-Checker Test",
-  message: lines.length ? lines.join("\n") : "Der Wind-Alarm funktioniert. In den nächsten Tagen ist leider nichts kitebar.",
+  title: lines.length
+    ? (MODE === "abend" ? (anyGood ? "🌙 Morgen Kitewetter!" : "🌙 Morgen vielleicht Kitewetter") : (anyGood ? "🪁 Kitewetter in Sicht!" : "🪁 Vielleicht Kitewetter"))
+    : "🪁 Kite-Checker Test" + (MODE === "abend" ? " (Abend)" : ""),
+  message: lines.length ? lines.join("\n") : MODE === "abend" ? "Der Abend-Alarm funktioniert. Morgen ist leider nichts kitebar." : "Der Wind-Alarm funktioniert. In den nächsten Tagen ist leider nichts kitebar.",
   tags: ["kite"],
   click: cfg.url,
 };
