@@ -40,3 +40,6 @@ Standard-Spot: Norddeich (Kiteschule), Anfänger-Einstellungen 12–22 kn, Flut 
 Link in Safari öffnen → Teilen → „Zum Home-Bildschirm“. Den Link einfach an deinen Bruder schicken; jeder hat seine eigenen Spots und Einstellungen.
 
 Daten: Open-Meteo (kostenlos, kein API-Key). Vorhersage ohne Gewähr.
+
+## Datenschutz
+Schriften und Kartenbibliothek (Leaflet) liegen im Repo und werden von der eigenen Seite geladen – keine Verbindung zu Google Fonts oder anderen CDNs. Externe Abrufe gibt es nur für die Wetter-/Kartendaten selbst (Open-Meteo, Bright Sky, OpenStreetMap-Kacheln).

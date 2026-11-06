@@ -1,8 +1,11 @@
 // Kite-Checker – Service Worker: App startet auch ohne Netz.
 // Eigene Dateien: erst Netz (immer aktuell), bei Funkloch aus dem Cache.
 // Wetterdaten laufen nicht hierüber – die liegen im localStorage-Cache der App.
-const CACHE = "kc-shell-v1";
-const SHELL = ["./", "index.html", "logic.js", "manifest.webmanifest", "alarm.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+const CACHE = "kc-shell-v2";
+const SHELL = ["./", "index.html", "logic.js", "manifest.webmanifest", "alarm.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png",
+  "fonts/familjen-grotesk-latin-500-normal.woff2", "fonts/familjen-grotesk-latin-700-normal.woff2",
+  "fonts/atkinson-hyperlegible-latin-400-normal.woff2", "fonts/atkinson-hyperlegible-latin-700-normal.woff2",
+  "fonts/ibm-plex-mono-latin-500-normal.woff2"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
